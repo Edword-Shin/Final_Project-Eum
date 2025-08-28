@@ -1,0 +1,17 @@
+- name: Delete existing MySQL StatefulSet (if exists)
+  command: kubectl delete statefulset mysql --ignore-not-found=true
+  delegate_to: localhost
+  environment:
+    KUBECONFIG: /home/user/.kube/config
+
+- name: Delete existing PVCs (if exists)
+  command: kubectl delete pvc -l app=mysql --ignore-not-found=true
+  delegate_to: localhost
+  environment:
+    KUBECONFIG: /home/user/.kube/config
+
+- name: Apply MySQL StatefulSet to Kubernetes
+  command: kubectl apply -f /tmp/mysql-statefulset.yaml
+  delegate_to: localhost
+  environment:
+    KUBECONFIG: /home/user/.kube/config

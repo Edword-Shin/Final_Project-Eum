@@ -1,0 +1,18 @@
+[ req ]
+default_bits       = 4096
+distinguished_name = dn
+x509_extensions    = v3_ca
+prompt             = no
+
+[ dn ]
+C  = KR
+ST = Seoul
+L  = Seoul
+O  = {{ registry_org }}
+CN = {{ registry_host }}-registry-ca
+
+[ v3_ca ]
+basicConstraints = critical, CA:TRUE
+keyUsage         = critical, keyCertSign, cRLSign
+subjectKeyIdentifier = hash
+authorityKeyIdentifier = keyid:always

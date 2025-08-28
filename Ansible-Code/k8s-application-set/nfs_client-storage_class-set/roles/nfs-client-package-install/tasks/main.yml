@@ -1,0 +1,11 @@
+---
+- name: Install NFS Client Package
+  ansible.builtin.dnf:
+    name: nfs-utils
+    state: present
+
+- name: Enable and Start nfs-client.target
+  ansible.builtin.systemd:
+    name: nfs-client.target
+    enabled: true
+    state: started

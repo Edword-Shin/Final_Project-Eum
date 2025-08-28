@@ -1,0 +1,22 @@
+[ req ]
+default_bits       = 4096
+distinguished_name = dn
+prompt             = no
+req_extensions     = v3_req
+
+[ dn ]
+C  = KR
+ST = Seoul
+L  = Seoul
+O  = {{ registry_org }}
+CN = {{ registry_host }}
+
+[ v3_req ]
+basicConstraints = CA:FALSE
+keyUsage         = critical, digitalSignature, keyEncipherment
+extendedKeyUsage = serverAuth
+subjectAltName   = @alt_names
+
+[ alt_names ]
+IP.1  = {{ registry_host }}
+DNS.1 = localhost

@@ -1,0 +1,49 @@
+---
+# Play 1: 모든 노드에 podman/httpd-tools 설치
+- name: Install packages (podman, httpd-tools) on all nodes
+  hosts: all_registry_nodes
+  gather_facts: false
+  become: true
+  vars_files:
+    - vault.yml
+  tasks:
+    - name: Ensure required packages present
+      ansible.builtin.dnf:
+        name:
+          - podman
+          - httpd-tools
+        state: present
+
+# Play 2: 레포 호스트에서 레지스트리/인증서/컨테이너 구성
+- name: Setup Private Registry on repo host
+  hosts: repo_host
+  gather_facts: false
+  become: true
+  vars_files:
+    - vault.yml   # (옵션) ansible_become_pass 등이 있으면 사용
+  roles:
+    - create-private-registry
+
+# Play 3: localhost에서 CA ConfigMap/DaemonSet 배포 (kubectl/kubeconfig 필요)
+- name: Private Registry Certification Set for K8S Cluster Daemonset
+  hosts: localhost
+  gather_facts: false
+  become: false
+  roles:
+    - role: private-registry-daemonset
+      vars:
+        kubeconfig_path: "/home/user/.kube/config"     # 실제 경로
+        certs_src_dir: "/opt/registry/certs"           # repo_host 상 경로 (ConfigMap은 로컬에서 생성하므로 이 값은 템플릿 내부 문서용)
+        host_certs_dst_dir: "/etc/containers/certs.d/{{ registry_host }}:{{ registry_port }}"
+        registry_host: "172.150.0.10"                  # 레포 호스트 IP와 반드시 일치
+        registry_port: 5000
+
+# Play 4: 각 K8S 노드가 원격 레지스트리에 로그인 (CA 배포 후)
+- name: Podman login to remote registry from each k8s node
+  hosts: k8s_clusters
+  gather_facts: false
+  become: true
+  vars_files:
+    - vault.yml
+  roles:
+    - k8s-podman-set

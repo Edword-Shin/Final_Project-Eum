@@ -1,0 +1,62 @@
+# tasks file for prepare-images
+---
+# [Prepare Image for K8S Cluster : MySQL Image]
+- name: Pull MySQL image
+  command: podman pull docker.io/library/mysql:8.0
+
+- name: Tag MySQL image
+  command: podman tag mysql:8.0 localhost:5000/mysql:8.0
+
+- name: Push MySQL image
+  command: podman push localhost:5000/mysql:8.0
+
+
+# [Prepare Image for K8S Cluster : Wordpress Image]
+- name: Pull Wordpress CLI image
+  command: podman pull docker.io/library/wordpress:cli
+
+- name: Tag Wordpress CLI image
+  command: podman tag wordpress:cli localhost:5000/wordpress:cli
+
+- name: Push Wordpress CLI image
+  command: podman push localhost:5000/wordpress:cli
+
+
+# [Prepare Image for K8S Cluster : Wordpress-PHP Image]
+- name: Pull Wordpress-PHP image
+  command: podman pull docker.io/library/wordpress:6.5-php8.2-fpm
+
+- name: Tag Wordpress-PHP image
+  command: podman tag wordpress:6.5-php8.2-fpm localhost:5000/wordpress:6.5-php8.2-fpm
+
+- name: Push Wordpress-PHP image
+  command: podman push localhost:5000/wordpress:6.5-php8.2-fpm
+
+
+# [Prepare Image for K8S Cluster : nginx]
+- name: Pull Nginx image
+  command: podman pull nginx:1.25-alpine
+
+- name: Tag Nginx image
+  command: podman tag nginx:1.25-alpine localhost:5000/nginx:1.25-alpine
+
+- name: Push Nginx image
+  command: podman push localhost:5000/nginx:1.25-alpine
+
+
+# [Prepare Image for K8S Cluster : Images Check]
+- name: Check image catalog
+  command: curl -u admin:admin -k https://localhost:5000/v2/_catalog
+  register: catalog_result
+
+- name: Show image catalog
+  debug:
+    var: catalog_result.stdout
+
+- name: List local images
+  command: podman image ls
+  register: image_list
+
+- name: Show local images
+  debug:
+    var: image_list.stdout

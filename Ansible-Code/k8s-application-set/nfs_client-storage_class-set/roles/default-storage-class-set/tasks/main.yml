@@ -1,0 +1,6 @@
+---
+- name: Set NFS StorageClass as default
+  ansible.builtin.command: >
+    kubectl patch storageclass nfs-client
+    -p '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"true"}}}'
+  become: false

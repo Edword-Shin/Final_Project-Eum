@@ -1,0 +1,25 @@
+---
+# 1) ConfigMap 갱신 (항상 최신 CA 반영)
+- name: Delete existing registry-ca.crt ConfigMap
+  command: kubectl delete configmap registry-ca.crt --ignore-not-found
+  environment:
+    KUBECONFIG: "{{ kubeconfig_path }}"
+
+- name: Create registry-ca.crt ConfigMap from CA cert
+  command: >
+    kubectl create configmap registry-ca.crt
+    --from-file=ca.crt={{ host_certs_dst_dir }}/ca.crt
+  environment:
+    KUBECONFIG: "{{ kubeconfig_path }}"
+
+# 2) DaemonSet YAML 생성(로컬)
+- name: Create DaemonSet YAML from template
+  template:
+    src: private-registry-daemonset.yaml.j2
+    dest: "/home/user/private-registry-daemonset.yaml"
+
+# 3) 배포
+- name: Apply DaemonSet to Kubernetes
+  command: kubectl apply -f "/home/user/private-registry-daemonset.yaml"
+  environment:
+    KUBECONFIG: "{{ kubeconfig_path }}"

@@ -1,0 +1,3 @@
+---
+- name: reload firewall
+  ansible.builtin.command: firewall-cmd --reload

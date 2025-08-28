@@ -1,0 +1,5 @@
+---
+registry_user: "admin"
+registry_password: "admin"
+registry_host: "172.150.0.10"   # repo_host IP와 일치
+registry_port: 5000

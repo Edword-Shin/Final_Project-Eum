@@ -1,0 +1,24 @@
+---
+- name: NFS Client Package Install
+  hosts: worker_nodes
+  become: true
+  vars_files:
+    - vault.yml
+  roles:
+    - nfs-client-package-install
+
+- name: Create NFS Client K8S Object
+  hosts: repo_host
+  become: true
+  vars_files:
+    - vault.yml
+  roles:
+    - create-nfs-client-k8s-object
+
+- name: Default Storage Class 설정
+  hosts: repo_host
+  become: true
+  vars_files:
+    - vault.yml
+  roles:
+    - default-storage-class-set

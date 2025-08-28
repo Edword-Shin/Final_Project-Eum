@@ -1,0 +1,9 @@
+- name: Template WordPress Deployment YAML
+  template:
+    src: wordpress-deployment.yaml.j2
+    dest: /tmp/wordpress-deployment.yaml
+
+- name: Apply WordPress Deployment
+  command: kubectl apply -f /tmp/wordpress-deployment.yaml
+  environment:
+    KUBECONFIG: /home/user/.kube/config

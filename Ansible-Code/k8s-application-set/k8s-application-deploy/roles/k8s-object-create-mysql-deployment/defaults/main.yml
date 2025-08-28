@@ -1,0 +1,6 @@
+mysql_db: wp
+mysql_user: wp-user
+mysql_user_password: "{{ vault_mysql_user_password }}"
+mysql_replicas: 1
+mysql_version: "8.0"
+mysql_storage: 10Gi

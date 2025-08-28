@@ -1,0 +1,55 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: install-registry-ca
+  labels:
+    app: install-registry-ca
+spec:
+  selector:
+    matchLabels:
+      app: install-registry-ca
+  template:
+    metadata:
+      labels:
+        app: install-registry-ca
+    spec:
+      hostPID: true
+      hostNetwork: true
+      tolerations:
+        - operator: "Exists"
+      initContainers:
+        - name: copy-registry-ca-dir
+          image: alpine:3
+          securityContext:
+            privileged: true
+          command:
+            - sh
+            - -c
+            - |
+              set -e
+              apk add --no-cache bash coreutils
+
+              SRC_DIR="/certs_dir_src"
+              DST_DIR="/host_certs_dir"
+
+              mkdir -p "${DST_DIR}"
+              cp -rT "${SRC_DIR}" "${DST_DIR}"
+
+              echo "Copied registry certs from ${SRC_DIR} to ${DST_DIR}"
+          volumeMounts:
+            - name: certs-dir-src
+              mountPath: /certs_dir_src
+              readOnly: true
+            - name: host-certs-dir
+              mountPath: /host_certs_dir
+      containers:
+        - name: pause
+          image: registry.k8s.io/pause:3.9
+      volumes:
+        - name: certs-dir-src
+          configMap:
+            name: registry-ca.crt
+        - name: host-certs-dir
+          hostPath:
+            path: {{ host_certs_dst_dir }}
+            type: DirectoryOrCreate

@@ -1,0 +1,124 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: wordpress
+  labels:
+    app: wordpress
+spec:
+  ports:
+    - port: 80
+  selector:
+    app: wordpress
+    tier: frontend
+  type: LoadBalancer
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: wp-pv-claim
+  labels:
+    app: wordpress
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 20Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: wordpress
+  labels:
+    app: wordpress
+spec:
+  selector:
+    matchLabels:
+      app: wordpress
+      tier: frontend
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: wordpress
+        tier: frontend
+    spec:
+      initContainers:
+      - name: wordpress-setup
+        image: wordpress:cli
+        command: ["/bin/sh", "-c"]
+        args:
+          - |
+            mkdir -p /var/www/html &&
+            wget -O /tmp/wordpress.tar.gz https://wordpress.org/latest.tar.gz &&
+            tar -xvf /tmp/wordpress.tar.gz -C /var/www/html &&
+            cp /var/www/html/wordpress/wp-config-sample.php /var/www/html/wordpress/wp-config.php &&
+            sed -i \
+              -e 's/database_name_here/wp/g' \
+              -e 's/username_here/wp-user/g' \
+              -e 's/password_here/P@ssw0rd/g' \
+              -e 's/localhost/mysql-read/g' \
+              /var/www/html/wordpress/wp-config.php &&
+            chmod -R 757 /var/www/html/wordpress
+        volumeMounts:
+        - name: wordpress-persistent-storage
+          mountPath: /var/www/html
+      containers:
+      - image: wordpress:6.5-php8.2-fpm
+        name: wordpress-php-fpm
+        env:
+        - name: WORDPRESS_DB_HOST
+          value: mysql-read
+        - name: WORDPRESS_DB_USER
+          value: root
+        - name: WORDPRESS_DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mysql-pass
+              key: password
+        volumeMounts:
+        - name: wordpress-persistent-storage
+          mountPath: /var/www/html
+      - image: nginx:1.25-alpine
+        name: nginx
+        ports:
+        - containerPort: 80
+          name: wordpress
+        volumeMounts:
+        - name: wordpress-persistent-storage
+          mountPath: /var/www/html
+        - name: nginx-conf
+          mountPath: /etc/nginx/conf.d/default.conf
+          subPath: default.conf
+      volumes:
+      - name: wordpress-persistent-storage
+        persistentVolumeClaim:
+          claimName: wp-pv-claim
+      - name: nginx-conf
+        configMap:
+          name: nginx-config
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-config
+data:
+  default.conf: |
+    server {
+        listen 80;
+        server_name _;
+
+        root /var/www/html/wordpress;
+        index index.php;
+
+        location / {
+            try_files $uri $uri/ /index.php?$args;
+        }
+
+        location ~ \.php$ {
+            include fastcgi_params;
+            fastcgi_pass 127.0.0.1:9000;
+            fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+        }
+    }

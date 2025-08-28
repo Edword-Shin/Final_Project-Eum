@@ -1,0 +1,21 @@
+---
+- name: Copy NFS RBAC yaml
+  ansible.builtin.template:
+    src: nfs-rbac.yml.j2
+    dest: /tmp/nfs-rbac.yml
+
+- name: Copy NFS StorageClass yaml
+  ansible.builtin.template:
+    src: nfs-class.yml.j2
+    dest: /tmp/nfs-class.yml
+
+- name: Copy NFS Deployment yaml
+  ansible.builtin.template:
+    src: nfs-deployment.yml.j2
+    dest: /tmp/nfs-deployment.yml
+
+- name: Apply NFS K8S Objects
+  ansible.builtin.command: >
+    kubectl apply -f /tmp/nfs-rbac.yml -f /tmp/nfs-class.yml -f /tmp/nfs-deployment.yml
+    --kubeconfig=/home/user/.kube/config
+  become: false
